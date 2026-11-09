@@ -1,0 +1,19 @@
+{
+  "name": "foerderradar-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Förderradar-Website: Website-Adresse eines Vereins eingeben, passende Förderprogramme mit kommender Frist und Antragslink bekommen. Ohne Anmeldung, ohne Speicherung.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "daten": "npm install https://codeload.github.com/KI-Klub-Werder-e-V/foerderradar/tar.gz/$(git ls-remote https://github.com/KI-Klub-Werder-e-V/foerderradar main | cut -f1)"
+  },
+  "dependencies": {
+    "foerderradar": "https://codeload.github.com/KI-Klub-Werder-e-V/foerderradar/tar.gz/a7e70fbb83d5c1693f8f01dcaa012a9f7156163b"
+  }
+}

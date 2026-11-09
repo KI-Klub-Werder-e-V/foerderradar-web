@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Förderradar: Fördermittel für deinen Verein finden | KI Klub Werder e.V.</title>
+  <meta name="description" content="Website-Adresse eingeben und passende Förderprogramme mit kommender Frist und Link zur Ausschreibung bekommen. Kostenlos, ohne Anmeldung, ohne Speicherung. Vom KI Klub Werder e.V.">
+  <link rel="canonical" href="https://ki-klub-werder.de/foerderradar/">
+  <meta property="og:title" content="Förderradar: Fördermittel für deinen Verein finden">
+  <meta property="og:description" content="Website eingeben, passende Förderprogramme mit Frist und Antragslink bekommen. Kostenlos und ohne Anmeldung.">
+  <meta property="og:url" content="https://ki-klub-werder.de/foerderradar/">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1a18" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="preload" href="fonts/jakarta.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="springen" href="#inhalt">Zum Inhalt springen</a>
+  <header class="kopf">
+    <div class="rahmen kopf-innen">
+      <a class="marke" href="https://ki-klub-werder.de/">
+        <img src="logo.webp" alt="" width="44" height="44">
+        <span><strong>KI Klub Werder e.V.</strong><span class="is-meta">(Havel)</span></span>
+      </a>
+      <a class="zurueck" href="https://ki-klub-werder.de/werkzeugkasten">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M15 6l-6 6 6 6"/></svg>
+        <span class="lang">Digitaler&nbsp;</span>Werkzeugkasten
+      </a>
+    </div>
+  </header>
+
+  <main id="inhalt">
+    <section class="rahmen einstieg" aria-labelledby="titel">
+      <div class="einstieg-text">
+        <h1 id="titel">Förderprogramme für deinen Verein finden</h1>
+        <p class="is-body lead">Gib die Adresse eurer Website ein. Der Förderradar liest, was ihr macht und wo ihr sitzt, und zeigt dir passende Programme mit der nächsten Frist und dem Link zur Ausschreibung.</p>
+
+        <form id="suche" class="suche" novalidate>
+          <label class="is-label" for="url">Website eures Vereins</label>
+          <div class="suche-zeile">
+            <input id="url" name="url" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="www.mein-verein.de" required aria-describedby="url-fehler datenschutz">
+            <button class="knopf-haupt" type="submit">
+              <span class="knopf-text">Programme finden</span>
+            </button>
+          </div>
+          <p id="url-fehler" class="feldfehler is-text" hidden></p>
+          <details class="zusatz">
+            <summary class="is-text">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M9 6l6 6-6 6"/></svg>
+              Wenig Text auf eurer Website? Beschreibt euch kurz
+            </summary>
+            <label class="is-label" for="beschreibung">Was macht ihr, für wen und wo?</label>
+            <textarea id="beschreibung" name="beschreibung" rows="3" maxlength="600" placeholder="Zum Beispiel: Wir sind ein Sportverein in Erfurt mit 120 Mitgliedern und wollen eine Inklusionsgruppe für Kinder aufbauen."></textarea>
+            <p class="is-help">Höchstens 600 Zeichen. Keine Namen oder Kontaktdaten von Personen.</p>
+          </details>
+          <p id="datenschutz" class="is-help hinweis">Kostenlos und ohne Anmeldung. Wir speichern nichts. Der Text eurer Website geht zur Auswertung an ein kostenloses Sprachmodell über OpenRouter.</p>
+        </form>
+      </div>
+
+      <aside class="vorschau" aria-labelledby="vorschau-titel">
+        <h2 id="vorschau-titel" class="is-label">Die nächsten Fristen, bundesweit</h2>
+        <p class="is-meta vorschau-unter" id="vorschau-stand">Aus geprüften Förderprogrammen</p>
+        <ol class="fristen fristen-klein" id="vorschau-liste"></ol>
+      </aside>
+    </section>
+
+    <section class="rahmen status" id="status" aria-live="polite" hidden>
+      <h2 class="is-label" id="status-titel">Suche läuft</h2>
+      <ol class="schritte">
+        <li data-schritt="lesen"><span class="marker" aria-hidden="true"></span><span>Website lesen</span></li>
+        <li data-schritt="abgleichen"><span class="marker" aria-hidden="true"></span><span>Mit den Förderprogrammen abgleichen</span></li>
+        <li data-schritt="sortieren"><span class="marker" aria-hidden="true"></span><span>Nach Frist sortieren</span></li>
+      </ol>
+      <p class="is-help" id="status-zeit"></p>
+    </section>
+
+    <div class="rahmen" id="meldung-ort"></div>
+
+    <section class="rahmen ergebnis" id="ergebnis" aria-labelledby="ergebnis-titel" hidden>
+      <h2 id="ergebnis-titel" tabindex="-1">Passende Programme</h2>
+      <div class="profil" id="profil"></div>
+      <div id="gruppen"></div>
+      <div class="aktionen">
+        <button type="button" class="knopf-rand" id="speichern">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
+          Liste speichern
+        </button>
+        <button type="button" class="knopf-rand" id="drucken">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M7 14h10v6H7z"/></svg>
+          Drucken
+        </button>
+      </div>
+    </section>
+
+    <section class="plugin" aria-labelledby="plugin-titel">
+      <div class="rahmen plugin-innen">
+        <div>
+          <h2 id="plugin-titel">Weiter bis zum fertigen Antrag</h2>
+          <p class="is-body">Die Website findet Programme. Das kostenlose Plugin für Claude geht mit euch weiter: Es liest die Förderrichtlinie, prüft, ob ihr antragsberechtigt seid, sucht eure Unterlagen zusammen, schreibt Entwürfe und zeigt, was noch fehlt.</p>
+          <ol class="weg">
+            <li><strong>Profil</strong><span class="is-text">Satzung, Bescheid und Website lesen</span></li>
+            <li><strong>Programme</strong><span class="is-text">Shortlist mit live geprüften Fristen</span></li>
+            <li><strong>Prüfung</strong><span class="is-text">Jede Bedingung mit Zitat aus der Richtlinie</span></li>
+            <li><strong>Lückenanalyse</strong><span class="is-text">Was vorhanden ist, was fehlt, wer es besorgt</span></li>
+          </ol>
+        </div>
+        <div class="installieren">
+          <p class="is-label" id="befehle-titel">In Claude Code eingeben</p>
+          <pre aria-labelledby="befehle-titel"><code>/plugin marketplace add KI-Klub-Werder-e-V/foerderradar
+/plugin install foerderradar@foerderradar</code></pre>
+          <button type="button" class="knopf-rand" id="kopieren">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M9 9h10v10H9zM5 15V5h10"/></svg>
+            <span>Befehle kopieren</span>
+          </button>
+          <p class="is-text"><a href="https://github.com/KI-Klub-Werder-e-V/foerderradar">Anleitung und Quellcode auf GitHub</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="fuss">
+    <div class="rahmen fuss-innen is-meta">
+      <p>Ehrenamtlich gebaut vom KI Klub Werder e.V., ohne Gewähr. Keine Fördermittelberatung: Bitte prüft Fristen und Bedingungen immer auf der Seite des Förderers.</p>
+      <p>
+        <a href="https://github.com/KI-Klub-Werder-e-V/foerderradar-web">Quellcode (AGPL-3.0)</a> ·
+        <a href="https://github.com/KI-Klub-Werder-e-V/foerderradar/tree/main/data">Datensatz (CC BY 4.0)</a> ·
+        <a href="https://github.com/KI-Klub-Werder-e-V/foerderradar/issues">Programm fehlt?</a> ·
+        <a href="https://ki-klub-werder.de/impressum">Impressum</a> ·
+        <a href="https://ki-klub-werder.de/datenschutz">Datenschutz</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
