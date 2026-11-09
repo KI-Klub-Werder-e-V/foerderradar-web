@@ -57,11 +57,14 @@ export function holeSeite(adresse, umleitungen = 0) {
       if (!/html/i.test(h["content-type"] ?? "")) { res.resume(); return reject(new SuchFehler("seite_nicht_erreichbar", "Unter der Adresse liegt keine Webseite.")); }
       const teile = []; let laenge = 0;
       res.on("data", (c) => { laenge += c.length; if (laenge > MAX_SEITE) res.destroy(); else teile.push(c); });
-      res.on("close", () => resolve({ url: u.href, html: Buffer.concat(teile).toString("utf8") }));
+      res.on("close", () => { clearTimeout(frist); resolve({ url: u.href, html: Buffer.concat(teile).toString("utf8") }); });
       res.on("error", reject);
     });
-    req.on("timeout", () => req.destroy(new SuchFehler("seite_nicht_erreichbar", "Die Website antwortet nicht rechtzeitig.")));
-    req.on("error", (e) => reject(e instanceof SuchFehler ? e : new SuchFehler("seite_nicht_erreichbar", "Die Website ist nicht erreichbar. Stimmt die Adresse?")));
+    const zuLangsam = () => new SuchFehler("seite_nicht_erreichbar", "Die Website antwortet nicht rechtzeitig.");
+    // Gesamtfrist, nicht nur Leerlauf: eine Seite, die langsam tröpfelt, hält die Suche sonst beliebig lange fest.
+    const frist = setTimeout(() => req.destroy(zuLangsam()), SEITEN_TIMEOUT);
+    req.on("timeout", () => req.destroy(zuLangsam()));
+    req.on("error", (e) => { clearTimeout(frist); reject(e instanceof SuchFehler ? e : new SuchFehler("seite_nicht_erreichbar", "Die Website ist nicht erreichbar. Stimmt die Adresse?")); });
   });
 }
 
@@ -69,24 +72,47 @@ export function holeSeite(adresse, umleitungen = 0) {
 const ENTITAETEN = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", auml: "ä", ouml: "ö", uuml: "ü", Auml: "Ä", Ouml: "Ö", Uuml: "Ü", szlig: "ß", euro: "€", ndash: "–", mdash: "—", bdquo: "„", ldquo: "“", rdquo: "”", hellip: "…" };
 const entschluesseln = (s) => s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] === "#" ? String.fromCodePoint(parseInt(e[1] === "x" || e[1] === "X" ? e.slice(2) : e.slice(1), e[1] === "x" || e[1] === "X" ? 16 : 10)) : ENTITAETEN[e] ?? m);
 
+// Fremdes HTML ist Eingabe eines Angreifers: alles hier läuft in linearer Zeit (indexOf statt
+// Lazy-Matches über das ganze Dokument, keine Zeichenklasse, die über ein "<" hinausläuft).
+const MAX_HTML = 300_000;
+const BLOCK = /<(!--|script|style|noscript|svg|template|iframe)\b/gi;
+
+function ohneBloecke(html) {
+  const klein = html.toLowerCase();
+  let aus = "", pos = 0, m;
+  BLOCK.lastIndex = 0;
+  while ((m = BLOCK.exec(html))) {
+    aus += html.slice(pos, m.index) + " ";
+    const ende = klein.indexOf(m[1] === "!--" ? "-->" : `</${m[1].toLowerCase()}`, m.index + m[0].length);
+    if (ende < 0) return aus;
+    pos = klein.indexOf(">", ende);
+    if (pos < 0) return aus;
+    BLOCK.lastIndex = ++pos;
+  }
+  return aus + html.slice(pos);
+}
+
 export function seitenText(html) {
-  return entschluesseln(html
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/<(script|style|noscript|svg|template|iframe)\b[\s\S]*?<\/\1>/gi, " ")
-    .replace(/<\/?(br|p|div|li|h[1-6]|tr|section|article|footer|header)\b[^>]*>/gi, "\n")
-    .replace(/<[^>]+>/g, " "))
-    .replace(/[ \t ]+/g, " ").replace(/\s*\n\s*/g, "\n").replace(/\n{2,}/g, "\n").trim();
+  return entschluesseln(ohneBloecke(html.slice(0, MAX_HTML))
+    .replace(/<\/?(?:br|p|div|li|h[1-6]|tr|section|article|footer|header)\b[^<>]*>/gi, "\n")
+    .replace(/<[^<>]*>/g, " "))
+    .replace(/[^\S\n]+/g, " ").replace(/ ?\n[\n ]*/g, "\n").trim();
 }
 
 const UNTERSEITE = /impressum|ueber|über|about|verein|wir-|wer-wir|leitbild|satzung|projekt|angebot|mission|kontakt/i;
+const LINK = /<a\b[^<>]*?href\s*=\s*["']([^"'#<>]+)["'][^<>]*>/gi;
 export function unterseiten(html, basis) {
-  const b = new URL(basis), gefunden = [];
-  for (const m of html.matchAll(/<a\b[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+  const b = new URL(basis), gefunden = [], h = html.slice(0, MAX_HTML), klein = h.toLowerCase();
+  LINK.lastIndex = 0;
+  for (let m; (m = LINK.exec(h));) {
+    if (gefunden.length >= 50) break;
+    const fenster = klein.slice(LINK.lastIndex, LINK.lastIndex + 2000), ende = fenster.indexOf("</a");
+    const linkText = ende < 0 ? "" : h.slice(LINK.lastIndex, LINK.lastIndex + ende);
     let u; try { u = new URL(entschluesseln(m[1]), b); } catch { continue; }
     if (u.hostname !== b.hostname || !/^https?:$/.test(u.protocol) || /\.(pdf|jpe?g|png|zip|docx?)$/i.test(u.pathname)) continue;
     u.hash = "";
     if (u.href === b.href || gefunden.includes(u.href)) continue;
-    if (UNTERSEITE.test(u.pathname) || UNTERSEITE.test(seitenText(m[2]))) gefunden.push(u.href);
+    if (UNTERSEITE.test(u.pathname) || UNTERSEITE.test(seitenText(linkText))) gefunden.push(u.href);
   }
   // Impressum zuerst: dort steht der Sitz, den wir für das Bundesland brauchen.
   return gefunden.sort((a, c) => /impressum/i.test(c) - /impressum/i.test(a)).slice(0, UNTERSEITEN);

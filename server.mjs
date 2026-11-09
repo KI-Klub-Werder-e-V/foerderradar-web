@@ -35,8 +35,9 @@ function darfSuchen(ip) {
   return null;
 }
 
-// shortcut: vertraut X-Forwarded-For, weil der Dienst nur hinter Traefik läuft; direkt erreichbar wäre das Limit umgehbar.
-const clientIp = (req) => (req.headers["x-forwarded-for"]?.split(",")[0] ?? req.socket.remoteAddress ?? "").trim();
+// Traefik hängt die echte Client-IP hinten an X-Forwarded-For an; was davor steht, kann der Client frei setzen.
+// shortcut: genau ein vertrauenswürdiger Proxy davor; bei mehreren Proxys die Zahl der Hops konfigurierbar machen.
+const clientIp = (req) => (req.headers["x-forwarded-for"]?.split(",").at(-1) ?? req.socket.remoteAddress ?? "").trim();
 const json = (res, status, obj) => { res.writeHead(status, { ...SICHERHEIT, "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }); res.end(JSON.stringify(obj)); };
 
 async function leseKoerper(req, max = 4096) {

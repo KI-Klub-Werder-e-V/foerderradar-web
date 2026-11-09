@@ -32,6 +32,15 @@ test("seitenText und unterseiten", () => {
   assert.deepEqual(unterseiten(html, "https://verein.de/"), ["https://verein.de/impressum", "https://verein.de/ueber-uns/", "https://verein.de/verein"]);
 });
 
+test("seitenText und unterseiten bleiben bei feindseligem HTML schnell", () => {
+  const feindlich = ["<script".repeat(150_000), "<!--".repeat(250_000), "<a href='/impressum'>x".repeat(60_000), "<p".repeat(400_000), "\r".repeat(300_000) + "x", "<a ".repeat(300_000)];
+  for (const html of feindlich) {
+    const start = performance.now();
+    seitenText(html); unterseiten(html, "https://verein.de/");
+    assert.ok(performance.now() - start < 500, `zu langsam: ${html.slice(0, 12)}`);
+  }
+});
+
 test("liesAntwort: prüft Felder, verwirft unbekannte IDs", () => {
   const a = liesAntwort(`<think>…</think>Hier: {"profil":{"name":"TSV","land":"by","themen":["Sport",3,"Kinder"]},"treffer":[{"id":"deutscher-engagementpreis","warum":"Passt."},{"id":"erfunden","warum":"x"}]}`);
   assert.equal(a.profil.land, "BY");
